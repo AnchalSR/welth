@@ -28,22 +28,27 @@ const aj = arcjet({
   ],
 });
 
-// Create base Clerk middleware
-const clerk = clerkMiddleware(async (auth, req) => {
-  const { userId } = await auth();
+// Create Clerk middleware
+const clerk = clerkMiddleware({
+  beforeAuth: (req) => {
+    // Run ArcJet before Clerk authentication
+    return aj(req);
+  },
+  afterAuth: async (auth, req) => {
+    const { userId } = auth;
 
-  if (!userId && isProtectedRoute(req)) {
-    const { redirectToSignIn } = await auth();
-    return redirectToSignIn();
+    if (!userId && isProtectedRoute(req)) {
+      const signInUrl = new URL('/sign-in', req.url);
+      signInUrl.searchParams.set('redirect_url', req.url);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    return NextResponse.next();
   }
-
-  return NextResponse.next();
 });
 
-// Chain middlewares - ArcJet runs first, then Clerk
-import { clerkMiddleware } from '@clerk/nextjs/server';
-
-export default clerkMiddleware();
+// Export the combined middleware
+export default clerk;
 
 export const config = {
   matcher: [
