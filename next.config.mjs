@@ -14,6 +14,13 @@ const nextConfig = {
       bodySizeLimit: "5mb",
     },
   },
+
+  webpack: (config, { isServer, dev }) => {
+    if (!dev) {
+      console.log('Building for production with custom webpack config');
+    }
+    return config;
+  },
 };
 
 export default nextConfig;
